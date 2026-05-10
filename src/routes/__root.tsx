@@ -3,6 +3,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import {
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_LANG,
+  SITE_LOCALE,
+  SITE_LOGO_URL,
+  SITE_NAME,
+  SITE_OG_IMAGE,
+  SITE_TAGLINE,
+  SITE_TWITTER,
+  SITE_URL,
+} from "@/lib/site-config";
 
 function NotFoundComponent() {
   return (
@@ -35,28 +47,89 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+const ROOT_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`;
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE_NAME,
+  url: SITE_URL,
+  logo: SITE_LOGO_URL,
+  description: SITE_DESCRIPTION,
+  sameAs: [],
+  address: {
+    "@type": "PostalAddress",
+    addressRegion: "Central Highlands",
+    addressCountry: "KE",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    email: "hello@daimacoffee.com",
+    telephone: "+254 700 000 000",
+    contactType: "sales",
+    availableLanguage: ["English", "Swahili"],
+  },
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_URL,
+  inLanguage: SITE_LANG,
+  description: SITE_DESCRIPTION,
+};
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Daima Coffee Estate — Highland Coffee, Grown with Care" },
-      { name: "description", content: "Daima Coffee Estate is a working highland farm producing single-origin coffee with patience, care, and respect for the land." },
-      { property: "og:title", content: "Daima Coffee Estate" },
-      { property: "og:description", content: "Single-origin highland coffee, grown and handled with care." },
+      { title: ROOT_TITLE },
+      { name: "description", content: SITE_DESCRIPTION },
+      { name: "keywords", content: SITE_KEYWORDS.join(", ") },
+      { name: "author", content: SITE_NAME },
+      { name: "publisher", content: SITE_NAME },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { name: "googlebot", content: "index, follow" },
+      { name: "theme-color", content: "#3a2a1c" },
+      { name: "format-detection", content: "telephone=no" },
+      { name: "application-name", content: SITE_NAME },
+      { name: "apple-mobile-web-app-title", content: SITE_NAME },
+      { property: "og:site_name", content: SITE_NAME },
       { property: "og:type", content: "website" },
+      { property: "og:locale", content: SITE_LOCALE },
+      { property: "og:title", content: ROOT_TITLE },
+      { property: "og:description", content: SITE_DESCRIPTION },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:image", content: SITE_OG_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:site", content: SITE_TWITTER },
+      { name: "twitter:title", content: ROOT_TITLE },
+      { name: "twitter:description", content: SITE_DESCRIPTION },
+      { name: "twitter:image", content: SITE_OG_IMAGE },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "canonical", href: SITE_URL },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-      { rel: "alternate icon", href: "/favicon.ico" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "apple-touch-icon", href: "/favicon.svg" },
+      { rel: "sitemap", type: "application/xml", href: "/sitemap.xml" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..700&family=Inter:wght@300;400;500;600&display=swap",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(organizationJsonLd),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(websiteJsonLd),
       },
     ],
   }),
@@ -68,7 +141,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang={SITE_LANG}>
       <head><HeadContent /></head>
       <body>{children}<Scripts /></body>
     </html>

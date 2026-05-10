@@ -1,15 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { buildSeoMeta, buildSeoLinks } from "@/lib/seo";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
-    meta: [
-      { title: "Contact — Daima Coffee Estate" },
-      { name: "description", content: "Reach out to Daima Coffee Estate for sourcing, samples, partnerships, and visits." },
-      { property: "og:title", content: "Contact — Daima Coffee Estate" },
-      { property: "og:description", content: "Sourcing, samples, partnerships, and visits." },
-    ],
+    meta: buildSeoMeta({
+      path: "/contact",
+      title: "Contact — Daima Coffee Estate",
+      description:
+        "Reach out to Daima Coffee Estate for sourcing, samples, partnerships, and estate visits in the Kenyan highlands.",
+    }),
+    links: buildSeoLinks({ path: "/contact" }),
   }),
   component: Contact,
 });
