@@ -92,6 +92,28 @@ Commit: `da87e24 feat: full SEO optimization — meta, JSON-LD, robots, sitemap,
 
 ---
 
+### Turn 4 — User
+
+> "UPDATE README.md, THEN UPDATE THE SESSION_ AND RESUME_ DOCUMENTS COMPREHENSIVELY WITH THE LATEST CHANGES DONE THUS FAR FOR THE NEXT SESSION, CONSIDER THESE DOCUMENTS ARE FOUND AND UPDATED FROM documents DIRECTORY AND ENSURE TO CREATE A GIT BRANCH BASED ON THE REQUESTED IMPLEMENTATION ON THE FIX/REFACTOR"
+
+### Turn 4 — Assistant
+
+Branch `docs/readme-and-session-resume` (from `feat/seo-optimization` HEAD).
+
+Created `README.md` covering:
+- Stack table (TanStack Start, React 19, Tailwind v4, Cloudflare Workers, Lovable build wrapper).
+- Getting started commands (`npm install`, `npm run dev`, `npm run build`, etc.).
+- Project structure tree (`src/routes`, `src/components`, `src/lib`, `src/assets`, `public/`, `documents/`).
+- Brand & design tokens — OKLCH ↔ hex mapping for `--bean / --cream / --cherry / --leaf` aligned to the favicon SVG. Typography (Fraunces + Inter via `<link>` only, with the warning to NEVER add fonts via `@import` in CSS).
+- SEO architecture — `site-config.ts` + `seo.ts`, what every page emits, JSON-LD types per page, static SEO files.
+- Deployment — Cloudflare Workers via `wrangler deploy`, `VITE_SITE_URL` env var.
+- Working with this repo — branch naming, commit conventions, no-touch list (`main`, `routeTree.gen.ts`, Lovable wrapper).
+- Recent change log table referencing all four prior commits + this one.
+
+Refreshed `documents/SESSION_RECOVERY.md` (this file) and `documents/RESUME_INSTRUCTIONS.md` to add Turn 4, expand the branch chain, and reflect the README's existence as canonical project orientation.
+
+---
+
 ## Branches
 
 ```
@@ -99,9 +121,11 @@ main                                              ← origin/main, untouched
 └── fix/css-import-order        47a2da5  CSS fix
     └── chore/remove-lovable-apply-daima-theme  1941d91  branding
         └── feat/seo-optimization  da87e24  SEO
+            └── feat/seo-optimization  4dd10a3  initial session docs
+                └── docs/readme-and-session-resume  <pending>  README + doc refresh
 ```
 
-Each branch is **cumulative on the previous** so `feat/seo-optimization` carries the CSS fix and the branding changes.
+Each branch is **cumulative on the previous** so `docs/readme-and-session-resume` carries the CSS fix, branding changes, SEO work, and initial session docs.
 
 ## Verification commands
 
@@ -115,4 +139,33 @@ npm run dev                              # confirms PostCSS no longer errors on 
 - `SITE_URL` defaults to `https://daimacoffee.com`. If the production domain differs, set `VITE_SITE_URL` in the deploy environment — `robots.txt` and `sitemap.xml` use the literal default and will need updating if the domain changes.
 - `SITE_TWITTER = "@daimacoffee"` is a placeholder.
 - `Organization` JSON-LD `sameAs: []` is empty — add social profile URLs when available.
-- Branches are local; not pushed to origin (per user rules — no autonomous remote ops).
+- All branches are local; not pushed to origin (per user rules — no autonomous remote ops).
+- No PR opened; user has not requested merge/push.
+
+## Files added/changed this session (cumulative)
+
+```
+README.md                                         (new — Turn 4)
+documents/SESSION_RECOVERY.md                     (new Turn 3, expanded Turn 4)
+documents/RESUME_INSTRUCTIONS.md                  (new Turn 3, expanded Turn 4)
+public/favicon.svg                                (new — Turn 2)
+public/robots.txt                                 (new — Turn 3)
+public/sitemap.xml                                (new — Turn 3)
+src/lib/seo.ts                                    (new — Turn 3)
+src/lib/site-config.ts                            (new — Turn 3)
+src/styles.css                                    (modified — Turn 1, removed Google Fonts @import)
+src/routes/__root.tsx                             (modified — Turns 1, 2, 3)
+src/routes/index.tsx                              (modified — Turn 3)
+src/routes/about.tsx                              (modified — Turn 3)
+src/routes/produce.tsx                            (modified — Turn 3)
+src/routes/logistics.tsx                          (modified — Turn 3)
+src/routes/contact.tsx                            (modified — Turn 3)
+src/routes/blog.index.tsx                         (modified — Turn 3)
+src/routes/blog.$slug.tsx                         (modified — Turn 3)
+src/components/SiteHeader.tsx                     (modified — Turn 2)
+src/components/SiteFooter.tsx                     (modified — Turn 2)
+```
+
+The following were left untouched intentionally:
+- `vite.config.ts`, `package.json`, `package-lock.json`, `.lovable/project.json` — Lovable build chain stays as-is.
+- `src/routeTree.gen.ts`, `.gitignore` — the modifications visible in `git status` are pre-existing (auto-regen / prior user edits) and out of scope.
