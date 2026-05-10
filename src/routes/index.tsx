@@ -2,15 +2,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import hero from "@/assets/hero-estate.jpg";
 import cherries from "@/assets/coffee-cherries.jpg";
 import hands from "@/assets/farmer-hands.jpg";
+import { buildSeoMeta, buildSeoLinks } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
-    meta: [
-      { title: "Daima Coffee Estate — Highland Coffee, Grown with Care" },
-      { name: "description", content: "A working highland coffee estate producing exceptional single-origin coffee with patience and care." },
-      { property: "og:title", content: "Daima Coffee Estate" },
-      { property: "og:description", content: "Highland single-origin coffee, grown with care." },
-    ],
+    meta: buildSeoMeta({
+      path: "/",
+      title: "Daima Coffee Estate — Highland Coffee, Grown with Care",
+      description:
+        "A working highland coffee estate producing exceptional single-origin Kenyan coffee with patience and care, from cherry to cup.",
+      image: hero,
+    }),
+    links: buildSeoLinks({ path: "/" }),
   }),
   component: Home,
 });

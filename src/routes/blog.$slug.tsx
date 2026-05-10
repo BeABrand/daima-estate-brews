@@ -1,5 +1,12 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getPostBySlug, posts } from "@/lib/blog-posts";
+import { buildSeoLinks, buildSeoMeta } from "@/lib/seo";
+import {
+  SITE_LOGO_URL,
+  SITE_NAME,
+  SITE_URL,
+  absoluteUrl,
+} from "@/lib/site-config";
 
 export const Route = createFileRoute("/blog/$slug")({
   loader: ({ params }) => {
@@ -7,50 +14,99 @@ export const Route = createFileRoute("/blog/$slug")({
     if (!post) throw notFound();
     return { post };
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     const post = loaderData?.post;
+    const slug = params?.slug ?? "";
     if (!post) {
       return {
-        meta: [
-          { title: "Article — Daima Coffee Estate" },
-          { name: "description", content: "Daima Coffee Estate journal." },
-        ],
+        meta: buildSeoMeta({
+          path: `/blog/${slug}`,
+          title: "Article — Daima Coffee Estate",
+          description: "Daima Coffee Estate journal.",
+          noindex: true,
+        }),
+        links: buildSeoLinks({ path: `/blog/${slug}` }),
       };
     }
+    const path = `/blog/${post.slug}`;
+    const articleTitle = `${post.title} — Daima Coffee Estate`;
+    const imageUrl = absoluteUrl(post.image);
     return {
       meta: [
-        { title: `${post.title} — Daima Coffee Estate` },
-        { name: "description", content: post.description },
+        ...buildSeoMeta({
+          path,
+          title: articleTitle,
+          description: post.description,
+          image: post.image,
+          type: "article",
+        }),
         { name: "keywords", content: post.keywords.join(", ") },
         { name: "author", content: post.author },
         { property: "article:published_time", content: post.date },
+        { property: "article:modified_time", content: post.date },
         { property: "article:section", content: post.category },
-        { property: "og:type", content: "article" },
-        { property: "og:title", content: post.title },
-        { property: "og:description", content: post.description },
-        { property: "og:image", content: post.image },
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: post.title },
-        { name: "twitter:description", content: post.description },
-        { name: "twitter:image", content: post.image },
+        { property: "article:author", content: post.author },
+        { property: "article:publisher", content: SITE_NAME },
       ],
+      links: buildSeoLinks({ path }),
       scripts: [
         {
           type: "application/ld+json",
           children: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Article",
+            mainEntityOfPage: {
+              "@type": "WebPage",
+              "@id": absoluteUrl(path),
+            },
             headline: post.title,
             description: post.description,
-            image: [post.image],
+            image: [imageUrl],
             datePublished: post.date,
-            author: { "@type": "Organization", name: post.author },
+            dateModified: post.date,
+            author: {
+              "@type": "Organization",
+              name: post.author,
+              url: SITE_URL,
+            },
             publisher: {
               "@type": "Organization",
-              name: "Daima Coffee Estate",
+              name: SITE_NAME,
+              logo: {
+                "@type": "ImageObject",
+                url: SITE_LOGO_URL,
+              },
             },
             keywords: post.keywords.join(", "),
             articleSection: post.category,
+            inLanguage: "en",
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: SITE_URL,
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Journal",
+                item: `${SITE_URL}/blog`,
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: post.title,
+                item: absoluteUrl(path),
+              },
+            ],
           }),
         },
       ],

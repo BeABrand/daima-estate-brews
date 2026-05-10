@@ -1,22 +1,42 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { posts } from "@/lib/blog-posts";
+import { buildSeoLinks, buildSeoMeta } from "@/lib/seo";
+import { SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/site-config";
+
+const blogJsonLd = () => ({
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  name: `Journal — ${SITE_NAME}`,
+  url: `${SITE_URL}/blog`,
+  description:
+    "Field notes, brewing guides, and supply-chain writing from a working highland coffee estate.",
+  publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+  blogPost: posts.map((p) => ({
+    "@type": "BlogPosting",
+    headline: p.title,
+    description: p.description,
+    url: `${SITE_URL}/blog/${p.slug}`,
+    datePublished: p.date,
+    author: { "@type": "Organization", name: p.author },
+    image: absoluteUrl(p.image),
+    keywords: p.keywords.join(", "),
+  })),
+});
 
 export const Route = createFileRoute("/blog/")({
   head: () => ({
-    meta: [
-      { title: "Journal — Daima Coffee Estate" },
+    meta: buildSeoMeta({
+      path: "/blog",
+      title: "Journal — Daima Coffee Estate",
+      description:
+        "Field notes, brewing guides, and supply-chain writing from a working highland coffee estate. Insights on Kenyan specialty coffee from Daima.",
+    }),
+    links: buildSeoLinks({ path: "/blog" }),
+    scripts: [
       {
-        name: "description",
-        content:
-          "Field notes, brewing guides, and supply-chain writing from a working highland coffee estate. Insights on Kenyan specialty coffee from Daima.",
+        type: "application/ld+json",
+        children: JSON.stringify(blogJsonLd()),
       },
-      { property: "og:title", content: "Journal — Daima Coffee Estate" },
-      {
-        property: "og:description",
-        content:
-          "Articles on Kenyan highland coffee, processing, sustainability, traceability, and brewing — written from the estate.",
-      },
-      { property: "og:type", content: "website" },
     ],
   }),
   component: BlogIndex,

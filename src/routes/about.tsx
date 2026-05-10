@@ -1,15 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import hands from "@/assets/farmer-hands.jpg";
 import hero from "@/assets/hero-estate.jpg";
+import { buildSeoMeta, buildSeoLinks } from "@/lib/seo";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
-    meta: [
-      { title: "About — Daima Coffee Estate" },
-      { name: "description", content: "Learn about Daima Coffee Estate — a highland farm rooted in patience, craft, and stewardship of the land." },
-      { property: "og:title", content: "About Daima Coffee Estate" },
-      { property: "og:description", content: "A highland farm rooted in patience, craft, and stewardship." },
-    ],
+    meta: buildSeoMeta({
+      path: "/about",
+      title: "About — Daima Coffee Estate",
+      description:
+        "Learn about Daima Coffee Estate — a highland farm rooted in patience, craft, and stewardship of the land.",
+      image: hero,
+    }),
+    links: buildSeoLinks({ path: "/about" }),
   }),
   component: About,
 });

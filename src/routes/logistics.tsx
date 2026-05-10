@@ -1,14 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import logistics from "@/assets/logistics.jpg";
+import { buildSeoMeta, buildSeoLinks } from "@/lib/seo";
 
 export const Route = createFileRoute("/logistics")({
   head: () => ({
-    meta: [
-      { title: "Logistics — Daima Coffee Estate" },
-      { name: "description", content: "From estate warehouse to global shipment — Daima's logistics keep our coffee traceable, protected, and on time." },
-      { property: "og:title", content: "Logistics — Daima Coffee Estate" },
-      { property: "og:description", content: "Traceable, protected, on time — from estate to destination." },
-    ],
+    meta: buildSeoMeta({
+      path: "/logistics",
+      title: "Logistics — Daima Coffee Estate",
+      description:
+        "From estate warehouse to global shipment — Daima's logistics keep our coffee traceable, protected, and on time, with full export documentation.",
+      image: logistics,
+    }),
+    links: buildSeoLinks({ path: "/logistics" }),
   }),
   component: Logistics,
 });
