@@ -5,7 +5,10 @@ export function SiteFooter() {
     <footer className="mt-24 bg-primary text-primary-foreground">
       <div className="mx-auto max-w-7xl px-6 lg:px-10 py-16 grid gap-12 md:grid-cols-4">
         <div className="md:col-span-2">
-          <div className="font-display text-3xl">Daima Coffee Estate</div>
+          <div className="flex items-center gap-3">
+            <img src="/favicon.svg" alt="" width={44} height={44} className="w-11 h-11 rounded-full bg-primary-foreground/5 p-1" />
+            <div className="font-display text-3xl">Daima Coffee Estate</div>
+          </div>
           <p className="mt-4 text-primary-foreground/70 max-w-md leading-relaxed">
             A working highland farm crafting single-origin coffee with patience, care, and a deep respect for the land.
           </p>

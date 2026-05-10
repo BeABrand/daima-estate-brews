@@ -16,8 +16,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border/60">
       <div className="mx-auto max-w-7xl px-6 lg:px-10 h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 group">
-          <span className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-display text-lg leading-none">D</span>
+        <Link to="/" className="flex items-center gap-2 group" aria-label="Daima Coffee Estate — home">
+          <img src="/favicon.svg" alt="" width={36} height={36} className="w-9 h-9" />
           <div className="leading-tight">
             <div className="font-display text-lg">Daima</div>
             <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground -mt-0.5">Coffee Estate</div>
