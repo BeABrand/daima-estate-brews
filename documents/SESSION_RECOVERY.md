@@ -127,32 +127,102 @@ main                                              ← origin/main, untouched
 
 Each branch is **cumulative on the previous** so `docs/readme-and-session-resume` carries the CSS fix, branding changes, SEO work, and initial session docs.
 
+---
+
+### Turn 5 — User
+
+Shared 6 screenshots of `daimacoffee.netlify.app` showing a Netlify "Page not found" 404 on production. Netlify deploy showed build succeeded (19 files uploaded, 2m 7s). Deploy file browser revealed all files landing under a `client/` subfolder — no `index.html` anywhere.
+
+### Turn 5 — Assistant
+
+**Root cause (two-part):**
+1. Netlify's publish directory was not configured, so it defaulted to `dist/` (the build root). Assets appeared under `client/` in the deploy browser because Vite writes client output to `dist/client/`.
+2. More fundamentally, TanStack Start with `@cloudflare/vite-plugin` never emits `index.html`. HTML is generated at request time inside the Cloudflare Worker. Netlify cannot run that Worker, so every URL returns 404 regardless of publish dir.
+
+**Fix (branch `fix/netlify-deployment`):**
+
+`vite.config.ts` — Enabled TanStack Start's built-in pre-renderer:
+```ts
+prerender: {
+  enabled: true,
+  crawlLinks: true,
+},
+```
+With `crawlLinks: true`, the build starts a local miniflare server (bundled via `wrangler` in `node_modules`) after the Cloudflare Worker bundle is compiled, crawls all links starting from `/`, renders each route to HTML, and writes the results as static files into `dist/client/`:
+- `dist/client/index.html` (home)
+- `dist/client/about/index.html`
+- `dist/client/produce/index.html`
+- `dist/client/logistics/index.html`
+- `dist/client/contact/index.html`
+- `dist/client/blog/index.html`
+- `dist/client/blog/<slug>/index.html` × 5 (discovered by crawling links on the blog index page)
+
+`netlify.toml` — New file telling Netlify exactly how to build and what to serve:
+```toml
+[build]
+  command   = "npm run build"
+  publish   = "dist/client"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+```
+The `/* → /index.html 200` redirect is a safety-net SPA fallback only; all known routes have pre-rendered HTML so Netlify serves them directly without hitting the redirect.
+
+Commit: `167bff3 fix: enable SSG pre-rendering and add netlify.toml for correct deployment`
+
+---
+
+## Branches
+
+```
+main                                              ← origin/main, untouched
+└── fix/css-import-order        47a2da5  CSS fix
+    └── chore/remove-lovable-apply-daima-theme  1941d91  branding
+        └── feat/seo-optimization  da87e24  SEO
+            └── feat/seo-optimization  4dd10a3  initial session docs
+                └── docs/readme-and-session-resume  04cf966  README + doc refresh
+                    └── chore/re-configuration  f5cb385  (what landed)
+                        └── fix/netlify-deployment  167bff3  SSG prerender + netlify.toml
+```
+
+Each branch is **cumulative on the previous**.
+
 ## Verification commands
 
 ```bash
-npx vite build --mode development        # build verifies plugin chain + CSS
-npm run dev                              # confirms PostCSS no longer errors on @import
+npm run build                            # confirms pre-render runs after CF Worker bundle
+# Look for "Prerendering pages..." in build output
+# dist/client/ should contain index.html at root and in each route subfolder
+npm run dev                              # dev mode: SSR via miniflare, no prerender step
 ```
 
-## Open items (none blocking)
+## Open items
 
 - `SITE_URL` defaults to `https://daimacoffee.com`. If the production domain differs, set `VITE_SITE_URL` in the deploy environment — `robots.txt` and `sitemap.xml` use the literal default and will need updating if the domain changes.
 - `SITE_TWITTER = "@daimacoffee"` is a placeholder.
 - `Organization` JSON-LD `sameAs: []` is empty — add social profile URLs when available.
 - All branches are local; not pushed to origin (per user rules — no autonomous remote ops).
 - No PR opened; user has not requested merge/push.
+- Netlify project is auto-deployed from GitHub. The fix branch must be merged into the branch Netlify watches (likely `main`) for the changes to take effect on `daimacoffee.netlify.app`.
 
-## Files added/changed this session (cumulative)
+## Files added/changed (cumulative)
 
 ```
+netlify.toml                                      (new — Turn 5)
 README.md                                         (new — Turn 4)
-documents/SESSION_RECOVERY.md                     (new Turn 3, expanded Turn 4)
-documents/RESUME_INSTRUCTIONS.md                  (new Turn 3, expanded Turn 4)
+documents/SESSION_RECOVERY.md                     (new Turn 3, expanded Turns 4, 5)
+documents/RESUME_INSTRUCTIONS.md                  (new Turn 3, expanded Turns 4, 5)
 public/favicon.svg                                (new — Turn 2)
 public/robots.txt                                 (new — Turn 3)
 public/sitemap.xml                                (new — Turn 3)
 src/lib/seo.ts                                    (new — Turn 3)
 src/lib/site-config.ts                            (new — Turn 3)
+vite.config.ts                                    (modified — Turn 5: added prerender config)
 src/styles.css                                    (modified — Turn 1, removed Google Fonts @import)
 src/routes/__root.tsx                             (modified — Turns 1, 2, 3)
 src/routes/index.tsx                              (modified — Turn 3)
@@ -165,7 +235,3 @@ src/routes/blog.$slug.tsx                         (modified — Turn 3)
 src/components/SiteHeader.tsx                     (modified — Turn 2)
 src/components/SiteFooter.tsx                     (modified — Turn 2)
 ```
-
-The following were left untouched intentionally:
-- `vite.config.ts`, `package.json`, `package-lock.json`, `.lovable/project.json` — Lovable build chain stays as-is.
-- `src/routeTree.gen.ts`, `.gitignore` — the modifications visible in `git status` are pre-existing (auto-regen / prior user edits) and out of scope.

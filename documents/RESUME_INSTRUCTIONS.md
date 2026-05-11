@@ -12,17 +12,19 @@ If you are a fresh Claude Code session continuing this work, read this file firs
 
 ## Current state
 
-All five tracks complete and committed locally (NOT pushed to origin):
+All tracks complete and committed locally (NOT pushed to origin):
 
 | # | Branch | Commit | What landed |
 |---|--------|--------|-------------|
 | 1 | `fix/css-import-order` | `47a2da5` | Moved Google Fonts `@import` from CSS to `<link>` in root head + preconnect hints |
-| 2 | `chore/remove-lovable-apply-daima-theme` | `1941d91` | Daima coffee bean SVG as favicon + header/footer logo (sourced from `daima_coffee_payments/public/favicon.svg`) |
-| 3 | `feat/seo-optimization` | `da87e24` | Centralized SEO config, per-route canonical/og/twitter, JSON-LD Organization+WebSite+Blog+Article+BreadcrumbList, robots.txt, sitemap.xml |
+| 2 | `chore/remove-lovable-apply-daima-theme` | `1941d91` | Daima coffee bean SVG as favicon + header/footer logo |
+| 3 | `feat/seo-optimization` | `da87e24` | Centralized SEO config, per-route canonical/og/twitter, JSON-LD, robots.txt, sitemap.xml |
 | 4 | `feat/seo-optimization` | `4dd10a3` | Initial `documents/SESSION_RECOVERY.md` and `documents/RESUME_INSTRUCTIONS.md` |
-| 5 | `docs/readme-and-session-resume` | _(latest)_ | `README.md` + comprehensive doc refresh through Turn 4 |
+| 5 | `docs/readme-and-session-resume` | `04cf966` | `README.md` + comprehensive doc refresh |
+| 6 | `chore/re-configuration` | `f5cb385` | (what landed — prior session) |
+| 7 | `fix/netlify-deployment` | `167bff3` | SSG prerendering + `netlify.toml` — fixes 404 on Netlify |
 
-Each branch is **cumulative** on the previous — `docs/readme-and-session-resume` HEAD carries every prior change.
+Each branch is **cumulative** on the previous — `fix/netlify-deployment` HEAD carries every prior change.
 
 ## Branch chain
 
@@ -32,31 +34,43 @@ main                                              (origin/main, untouched)
     └── chore/remove-lovable-apply-daima-theme   1941d91   Daima brand SVG
         └── feat/seo-optimization      da87e24   SEO + JSON-LD + sitemap
             └── feat/seo-optimization  4dd10a3   initial session docs
-                └── docs/readme-and-session-resume  <pending>   README + doc refresh
+                └── docs/readme-and-session-resume  04cf966   README + doc refresh
+                    └── chore/re-configuration   f5cb385   (prior session)
+                        └── fix/netlify-deployment  167bff3   SSG prerender + netlify.toml
 ```
 
 ## How to verify
 
 ```bash
 cd /var/www/html/contract/james_projects/daima-estate-brews
-git checkout docs/readme-and-session-resume
-npx vite build --mode development      # ~3s, no PostCSS errors, ~85 kB CSS
-npm run dev                            # serves on :8080 (or :8081 if 8080 busy)
+git checkout fix/netlify-deployment
+npm run build
+# Build output should show "Prerendering pages..." after the Worker bundle compiles.
+# Verify dist/client/ contains:
+#   index.html
+#   about/index.html
+#   produce/index.html
+#   logistics/index.html
+#   contact/index.html
+#   blog/index.html
+#   blog/<slug>/index.html  (×5)
 ```
 
-Then open the dev URL and `View Source` on `/`, `/blog`, and `/blog/<slug>` to confirm:
-- `<title>` and `<meta name="description">` present
-- `<link rel="canonical">` present and absolute
-- `<meta property="og:image">` is an absolute URL
-- `<script type="application/ld+json">` blocks render (Organization + WebSite always; Blog on `/blog`; Article + BreadcrumbList on `/blog/<slug>`)
+For dev/SEO verification (unchanged from prior session):
+```bash
+npm run dev    # serves on :8080; View Source on /, /blog, /blog/<slug>
+```
 
 ## How to continue
 
-### To merge or PR
+### To deploy the Netlify fix
+
+Merge `fix/netlify-deployment` into the branch Netlify watches (likely `main`) and push. Netlify will re-deploy automatically. The next deploy will:
+1. Run `npm run build` (per `netlify.toml`)
+2. Pre-render all 11 routes to HTML via miniflare
+3. Serve from `dist/client/` — every route will return 200 with correct HTML
 
 The user has NOT asked for any merge or push. Their global rules forbid touching `main`/`master`/`production` and forbid autonomous pushes. **Wait for explicit instruction.**
-
-If asked to PR: each branch is independent enough to PR separately, but because they are stacked, the simplest path is one PR from `docs/readme-and-session-resume` → `main` covering all five commits.
 
 ### To extend SEO
 
