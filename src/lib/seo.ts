@@ -13,7 +13,7 @@ type MetaTag =
   | { name: string; content: string }
   | { property: string; content: string };
 
-type LinkTag = { rel: string; href: string; type?: string; crossOrigin?: string };
+type LinkTag = { rel: string; href: string; type?: string; crossOrigin?: "anonymous" | "use-credentials" | "" };
 
 type SeoInput = {
   path: string;
