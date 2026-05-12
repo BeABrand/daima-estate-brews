@@ -1,0 +1,13 @@
+[build]
+  command   = "npm run build"
+  publish   = "dist/client"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback — serves root index.html for any path not matched by a pre-rendered file.
+# TanStack Router then handles client-side navigation to the correct route.
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
