@@ -148,32 +148,74 @@ prerender: {
   crawlLinks: true,
 },
 ```
-With `crawlLinks: true`, the build starts a local miniflare server (bundled via `wrangler` in `node_modules`) after the Cloudflare Worker bundle is compiled, crawls all links starting from `/`, renders each route to HTML, and writes the results as static files into `dist/client/`:
-- `dist/client/index.html` (home)
-- `dist/client/about/index.html`
-- `dist/client/produce/index.html`
-- `dist/client/logistics/index.html`
-- `dist/client/contact/index.html`
-- `dist/client/blog/index.html`
-- `dist/client/blog/<slug>/index.html` × 5 (discovered by crawling links on the blog index page)
 
 `netlify.toml` — New file telling Netlify exactly how to build and what to serve:
 ```toml
 [build]
   command   = "npm run build"
   publish   = "dist/client"
-
-[build.environment]
-  NODE_VERSION = "20"
-
-[[redirects]]
-  from   = "/*"
-  to     = "/index.html"
-  status = 200
+  ...
 ```
-The `/* → /index.html 200` redirect is a safety-net SPA fallback only; all known routes have pre-rendered HTML so Netlify serves them directly without hitting the redirect.
 
-Commit: `167bff3 fix: enable SSG pre-rendering and add netlify.toml for correct deployment`
+Commits: `167bff3`, `3cad0b1`
+
+---
+
+### Turn 6 — User
+
+Pasted Netlify build log showing the `fix/netlify-deployment` branch also failing:
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/opt/build/repo/dist/server/server.js'
+  imported from @tanstack/start-plugin-core/.../vite/preview-server-plugin/plugin.js
+...
+Error: Failed to fetch /: Internal Server Error
+```
+Prerender started but all pages returned 500. Build failed exit code 2.
+
+### Turn 6 — Assistant
+
+**Diagnosis:** Two adapter conflicts running simultaneously:
+
+1. **`preview-server-plugin` (Node.js adapter plugin)** — TanStack Start's prerender uses this plugin to start a local HTTP server from the compiled server bundle, then crawls routes against it. It looks for `dist/server/server.js`. The Cloudflare adapter outputs `dist/server/index.js` instead → `ERR_MODULE_NOT_FOUND`.
+
+2. **Miniflare fallback** — After the Node.js plugin crashes, miniflare (the Cloudflare Worker emulator bundled in `wrangler`) starts and serves requests. However, miniflare encounters an internal error (visible from the 500 response headers showing workerd) → all prerender crawl fetches return HTTP 500 → prerender aborts.
+
+**Why the previous attempt looked partial but failed:** The prerender DID start crawling (`/`, `/about`, `/contact`), proving miniflare was running. But the 500s are fatal — prerender exits with code 1, aborting the whole build.
+
+**Root cause:** `@cloudflare/vite-plugin` builds the server as a Cloudflare Worker bundle (`dist/server/index.js`). TanStack Start's Node.js prerender infrastructure expects a Node.js-compatible server module at `dist/server/server.js`. These are incompatible.
+
+**Fix (branch `fix/netlify-cloudflare-adapter-conflict`):**
+
+`vite.config.ts` — Detect Netlify's build environment via `process.env.NETLIFY` (set to `"true"` automatically by Netlify):
+
+```ts
+const isNetlifyBuild = process.env.NETLIFY === "true";
+
+export default defineConfig({
+  ...(isNetlifyBuild && { cloudflare: false }),  // disable CF adapter on Netlify
+  tanstackStart: {
+    server: { entry: "server" },
+    ...(isNetlifyBuild && {
+      prerender: { enabled: true, crawlLinks: true },
+    }),
+  },
+});
+```
+
+When `NETLIFY=true`:
+- `cloudflare: false` disables `@cloudflare/vite-plugin`
+- TanStack Start's Node.js SSR adapter takes over
+- Server bundle outputs to `dist/server/server.js` — `preview-server-plugin` finds it
+- Prerender starts a plain Node.js HTTP server (no miniflare) → reliable 200 responses
+- All 11 routes rendered to static HTML in `dist/client/`
+
+When NOT on Netlify (local dev, Lovable, Cloudflare Pages):
+- Cloudflare Workers adapter unchanged
+- No prerender (Cloudflare Worker handles SSR at request time)
+
+Verified local build still passes clean (Cloudflare path, no prerender).
+
+Commit: `ec38d66 fix: disable Cloudflare adapter on Netlify to unblock SSG prerender`
 
 ---
 

@@ -22,9 +22,10 @@ All tracks complete and committed locally (NOT pushed to origin):
 | 4 | `feat/seo-optimization` | `4dd10a3` | Initial `documents/SESSION_RECOVERY.md` and `documents/RESUME_INSTRUCTIONS.md` |
 | 5 | `docs/readme-and-session-resume` | `04cf966` | `README.md` + comprehensive doc refresh |
 | 6 | `chore/re-configuration` | `f5cb385` | (what landed — prior session) |
-| 7 | `fix/netlify-deployment` | `167bff3` | SSG prerendering + `netlify.toml` — fixes 404 on Netlify |
+| 7 | `fix/netlify-deployment` | `167bff3` | SSG prerendering + `netlify.toml` — first attempt (prerender crashed on Cloudflare adapter conflict) |
+| 8 | `fix/netlify-cloudflare-adapter-conflict` | `ec38d66` | Detect Netlify env, disable Cloudflare adapter, gate prerender — resolves 500 on prerender |
 
-Each branch is **cumulative** on the previous — `fix/netlify-deployment` HEAD carries every prior change.
+Each branch is **cumulative** on the previous — `fix/netlify-cloudflare-adapter-conflict` HEAD carries every prior change.
 
 ## Branch chain
 
@@ -36,39 +37,39 @@ main                                              (origin/main, untouched)
             └── feat/seo-optimization  4dd10a3   initial session docs
                 └── docs/readme-and-session-resume  04cf966   README + doc refresh
                     └── chore/re-configuration   f5cb385   (prior session)
-                        └── fix/netlify-deployment  167bff3   SSG prerender + netlify.toml
+                        └── fix/netlify-deployment  167bff3   netlify.toml + prerender attempt 1
+                            └── fix/netlify-cloudflare-adapter-conflict  ec38d66   CF adapter fix
 ```
 
 ## How to verify
 
 ```bash
 cd /var/www/html/contract/james_projects/daima-estate-brews
-git checkout fix/netlify-deployment
-npm run build
-# Build output should show "Prerendering pages..." after the Worker bundle compiles.
-# Verify dist/client/ contains:
-#   index.html
-#   about/index.html
-#   produce/index.html
-#   logistics/index.html
-#   contact/index.html
-#   blog/index.html
-#   blog/<slug>/index.html  (×5)
-```
+git checkout fix/netlify-cloudflare-adapter-conflict
 
-For dev/SEO verification (unchanged from prior session):
-```bash
-npm run dev    # serves on :8080; View Source on /, /blog, /blog/<slug>
+# Simulate what Netlify does:
+NETLIFY=true npm run build
+# Should show "Prerendering pages..." with Node.js SSR (no miniflare/workerd).
+# dist/client/ should contain:
+#   index.html
+#   about/index.html  produce/index.html  logistics/index.html
+#   contact/index.html  blog/index.html
+#   blog/<slug>/index.html  (×5 — discovered by link crawl from /blog)
+
+# Local dev (unchanged — Cloudflare Worker path):
+npm run build    # no prerender, outputs dist/server/index.js as before
+npm run dev      # miniflare SSR on :8080
 ```
 
 ## How to continue
 
 ### To deploy the Netlify fix
 
-Merge `fix/netlify-deployment` into the branch Netlify watches (likely `main`) and push. Netlify will re-deploy automatically. The next deploy will:
-1. Run `npm run build` (per `netlify.toml`)
-2. Pre-render all 11 routes to HTML via miniflare
-3. Serve from `dist/client/` — every route will return 200 with correct HTML
+Merge `fix/netlify-cloudflare-adapter-conflict` into the branch Netlify watches (likely `main`) and push. Netlify will re-deploy automatically. The next deploy will:
+1. Run `npm run build` with `NETLIFY=true` set by Netlify's build environment
+2. Disable Cloudflare adapter, use Node.js SSR adapter
+3. Pre-render all 11 routes to HTML via Node.js preview server
+4. Serve from `dist/client/` — every route returns 200 with pre-rendered HTML
 
 The user has NOT asked for any merge or push. Their global rules forbid touching `main`/`master`/`production` and forbid autonomous pushes. **Wait for explicit instruction.**
 
